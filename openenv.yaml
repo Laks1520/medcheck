@@ -1,0 +1,39 @@
+name: medcheck
+version: "1.0.0"
+description: "MedCheck is a prescription error detection environment where an AI agent analyzes patient profiles and prescriptions to identify dangerous errors including allergy violations, drug interactions, and dosage overdoses."
+
+author: "lakshitha"
+tags: ["healthcare", "prescription-safety", "medical", "openenv"]
+
+environment:
+  type: "text"
+  api:
+    reset: "/reset"
+    step: "/step"
+    state: "/state"
+
+tasks:
+  - id: "easy"
+    description: "Detect allergy violation — patient allergic to Penicillin prescribed Amoxicillin"
+    difficulty: "easy"
+    max_steps: 1
+
+  - id: "medium"
+    description: "Detect dangerous drug interaction — Warfarin and Aspirin combination causing bleeding risk"
+    difficulty: "medium"
+    max_steps: 1
+
+  - id: "hard"
+    description: "Detect multiple errors — Metformin overdose and Ibuprofen contraindication in kidney disease patient"
+    difficulty: "hard"
+    max_steps: 1
+
+reward:
+  min: 0.0
+  max: 1.0
+  type: "continuous"
+  description: "Score based on correctly identified errors and severity classification"
+
+runtime:
+  port: 7860
+  startup_command: "uvicorn main:app --host 0.0.0.0 --port 7860"
