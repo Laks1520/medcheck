@@ -4,23 +4,17 @@ from openai import OpenAI
 from environment import MedCheckEnvironment
 from models import Action
 
-# The judges run this script to verify your environment works
-# It must print logs in EXACT format: [START], [STEP], [END]
-
 client = OpenAI(
-    api_key=os.environ.get("HF_TOKEN"),
+    api_key=os.environ.get("HF_TOKEN", "dummy-key"),
     base_url=os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
 )
 
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 
 def run_task(task_id: str):
-    """Run the AI agent on one task and print structured logs"""
-    
     env = MedCheckEnvironment()
     observation = env.reset(task_id=task_id)
 
-    # Convert observation to text for the LLM
     prompt = f"""You are a medical prescription safety checker.
 
 Patient: {observation.patient_name}, Age: {observation.patient_age}
@@ -30,7 +24,7 @@ Current Medications: {', '.join(observation.current_medications) if observation.
 New Prescription: {observation.new_prescription}
 Dosage: {observation.dosage}
 
-Analyze this prescription for errors. Respond ONLY with valid JSON in this exact format:
+Analyze this prescription for errors. Respond ONLY with valid JSON:
 {{
     "detected_errors": ["error1", "error2"],
     "severity": "critical" or "moderate" or "none",
@@ -39,24 +33,32 @@ Analyze this prescription for errors. Respond ONLY with valid JSON in this exact
 
     print(json.dumps({"type": "[START]", "task_id": task_id}))
 
-    # Call the LLM
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
 
-    raw = response.choices[0].message.content.strip()
-    
-    # Clean up response in case model adds markdown
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
+        raw = response.choices[0].message.content.strip()
 
-    parsed = json.loads(raw)
-    action = Action(**parsed)
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip()
+
+        parsed = json.loads(raw)
+        action = Action(**parsed)
+
+    except Exception as e:
+        print(json.dumps({"type": "[ERROR]", "task_id": task_id, "error": str(e)}))
+        # Fallback action so grader still runs
+        action = Action(
+            detected_errors=["unknown error during inference"],
+            severity="none",
+            recommendation="Could not complete inference"
+        )
 
     _, reward, done, info = env.step(action)
 
@@ -84,8 +86,12 @@ if __name__ == "__main__":
     scores = {}
     for task_id in ["easy", "medium", "hard"]:
         print(f"\n--- Running task: {task_id} ---")
-        score = run_task(task_id)
-        scores[task_id] = score
+        try:
+            score = run_task(task_id)
+            scores[task_id] = score
+        except Exception as e:
+            print(json.dumps({"type": "[ERROR]", "task_id": task_id, "error": str(e)}))
+            scores[task_id] = 0.0
 
     print("\n=== FINAL SCORES ===")
     for task_id, score in scores.items():
