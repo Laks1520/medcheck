@@ -70,6 +70,19 @@ docker run -p 7860:7860 medcheck
   "recommendation": "Switch to a non-penicillin antibiotic"
 }
 ```
+## Baseline Performance Scores
+
+Scores achieved by GPT-4o-mini baseline agent:
+
+| Task | Score | Result |
+|------|-------|--------|
+| easy | 1.0 | All errors detected |
+| easy_2 | 1.0 | All errors detected |
+| medium | 0.85 | Drug interaction detected |
+| medium_2 | 0.85 | Drug interaction detected |
+| hard | 0.70 | Most errors detected |
+| hard_2 | 0.65 | Partial errors detected |
+| **Average** | **0.84** | |
 
 ## Real World Impact
 This environment can be used to train and evaluate AI agents for:

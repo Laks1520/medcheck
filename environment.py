@@ -32,39 +32,49 @@ class MedCheckEnvironment:
         return self.current_observation
 
     def step(self, action: Action) -> tuple:
-        """
-        Agent submits their answer (detected errors + severity).
-        Environment scores it and returns result.
-        """
-        if self.done:
-            raise ValueError("Episode is done. Call reset() first.")
+    if self.done:
+        raise ValueError("Episode is done. Call reset() first.")
 
-        # Grade the agent's response
-        score = grade_response(
-            task_id=self.current_task_id,
-            detected_errors=action.detected_errors,
-            severity=action.severity
-        )
+    score = grade_response(
+        task_id=self.current_task_id,
+        detected_errors=action.detected_errors,
+        severity=action.severity
+    )
 
-        # Build feedback message
-        if score >= 0.8:
-            feedback = "Excellent! Agent correctly identified the prescription errors."
-        elif score >= 0.5:
-            feedback = "Partial credit. Agent found some but not all errors."
-        elif score > 0:
-            feedback = "Poor performance. Agent missed most critical errors."
-        else:
-            feedback = "Failed. Agent did not identify any errors correctly."
+    # Incremental feedback throughout
+    intermediate_feedback = []
+    
+    if len(action.detected_errors) == 0:
+        intermediate_feedback.append("No errors detected — check patient allergies and current medications.")
+    else:
+        intermediate_feedback.append(f"Agent identified {len(action.detected_errors)} potential error(s).")
 
-        reward = Reward(score=score, feedback=feedback)
-        self.last_reward = reward
-        self.done = True  # one step per episode
+    if action.severity not in ["critical", "moderate", "none"]:
+        intermediate_feedback.append("Invalid severity level — must be critical, moderate, or none.")
+    else:
+        intermediate_feedback.append(f"Severity classified as: {action.severity}.")
 
-        return self.current_observation, reward, self.done, {
-            "task_id": self.current_task_id,
-            "score": score
-        }
+    if score >= 0.8:
+        final_feedback = "Excellent! All critical errors identified correctly."
+    elif score >= 0.5:
+        final_feedback = "Partial credit. Some errors missed."
+    elif score > 0:
+        final_feedback = "Poor performance. Most errors missed."
+    else:
+        final_feedback = "Failed. No errors correctly identified."
 
+    full_feedback = " | ".join(intermediate_feedback) + " | " + final_feedback
+
+    reward = Reward(score=score, feedback=full_feedback)
+    self.last_reward = reward
+    self.done = True
+
+    return self.current_observation, reward, self.done, {
+        "task_id": self.current_task_id,
+        "score": score,
+        "intermediate_feedback": intermediate_feedback,
+        "final_feedback": final_feedback
+    }
     def state(self) -> dict:
         """
         Returns current state of the environment.
