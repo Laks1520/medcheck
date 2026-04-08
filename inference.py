@@ -32,7 +32,7 @@ Analyze this prescription for errors. Respond ONLY with valid JSON:
     "recommendation": "your recommendation here"
 }}"""
 
-    print(json.dumps({"type": "[START]", "task_id": task_id}))
+    print(f"[START] task={task_id}", flush=True)
 
     action = None
     try:
@@ -45,65 +45,45 @@ Analyze this prescription for errors. Respond ONLY with valid JSON:
         )
 
         raw = response.choices[0].message.content.strip()
-
         if "```" in raw:
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
         raw = raw.strip()
-
         parsed = json.loads(raw)
         action = Action(**parsed)
 
     except Exception as e:
-        print(json.dumps({"type": "[ERROR]", "task_id": task_id, "error": str(e)}))
-        action = Action(
-            detected_errors=["inference error - could not complete analysis"],
-            severity="none",
-            recommendation="Inference failed gracefully"
-        )
+        print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
+        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        return 0.0
 
     try:
         _, reward, done, info = env.step(action)
     except Exception as e:
-        print(json.dumps({"type": "[ERROR]", "task_id": task_id, "error": str(e)}))
-        reward_score = 0.0
-        print(json.dumps({"type": "[STEP]", "task_id": task_id, "score": 0.0, "feedback": "step failed"}))
-        print(json.dumps({"type": "[END]", "task_id": task_id, "final_score": 0.0}))
+        print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
+        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
         return 0.0
 
-    print(json.dumps({
-        "type": "[STEP]",
-        "task_id": task_id,
-        "detected_errors": action.detected_errors,
-        "severity": action.severity,
-        "score": reward.score,
-        "feedback": reward.feedback
-    }))
-
-    print(json.dumps({
-        "type": "[END]",
-        "task_id": task_id,
-        "final_score": reward.score
-    }))
+    print(f"[STEP] task={task_id} step=1 reward={reward.score}", flush=True)
+    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
 
     return reward.score
 
 
 if __name__ == "__main__":
-    print("\n=== MedCheck Baseline Inference ===\n")
+    print("=== MedCheck Baseline Inference ===", flush=True)
 
     scores = {}
     for task_id in ["easy", "medium", "hard"]:
-        print(f"\n--- Running task: {task_id} ---")
         try:
             score = run_task(task_id)
             scores[task_id] = score
         except Exception as e:
-            print(json.dumps({"type": "[ERROR]", "task_id": task_id, "error": str(e)}))
+            print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
+            print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
             scores[task_id] = 0.0
 
-    print("\n=== FINAL SCORES ===")
+    print("=== FINAL SCORES ===", flush=True)
     for task_id, score in scores.items():
-        print(f"{task_id}: {score}")
-    print(f"Average: {round(sum(scores.values()) / len(scores), 2)}")
+        print(f"{task_id}: {score}", flush=True)
