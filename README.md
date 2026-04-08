@@ -1,3 +1,13 @@
+---
+title: MedCheck
+emoji: 💊
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+tags:
+  - openenv
+---
 # MedCheck — Prescription Error Detector 💊
 
 An OpenEnv environment where an AI agent analyzes patient profiles and detects dangerous prescription errors before they reach the patient.
