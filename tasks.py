@@ -1,7 +1,13 @@
 from models import Observation
 
-# These are our 3 tasks - easy, medium, hard
-# Each task has a patient scenario and a CORRECT answer the agent must find
+DRUG_INTERACTIONS = {
+    "amoxicillin": ["penicillin"],
+    "aspirin": ["warfarin", "ibuprofen"],
+    "ibuprofen": ["kidney disease", "warfarin", "aspirin"],
+    "metformin": ["kidney disease"],
+    "lisinopril": ["kidney disease", "potassium supplements"],
+    "simvastatin": ["clarithromycin", "erythromycin"],
+}
 
 TASKS = {
     "easy": {
@@ -11,11 +17,10 @@ TASKS = {
             allergies=["Penicillin"],
             conditions=["throat infection"],
             current_medications=[],
-            new_prescription="Amoxicillin",  # Amoxicillin IS a penicillin-type drug!
+            new_prescription="Amoxicillin",
             dosage="500mg/day",
             task_id="easy"
         ),
-        # What the correct answer looks like
         "expected_errors": ["penicillin allergy"],
         "expected_severity": "critical"
     },
@@ -26,8 +31,8 @@ TASKS = {
             patient_age=58,
             allergies=[],
             conditions=["blood clot history"],
-            current_medications=["Warfarin"],  # blood thinner
-            new_prescription="Aspirin",        # ALSO a blood thinner = dangerous!
+            current_medications=["Warfarin"],
+            new_prescription="Aspirin",
             dosage="100mg/day",
             task_id="medium"
         ),
@@ -42,41 +47,78 @@ TASKS = {
             allergies=[],
             conditions=["kidney disease", "diabetes"],
             current_medications=["Insulin"],
-            new_prescription="Metformin + Ibuprofen",  # both dangerous here!
-            dosage="3000mg/day",                        # Metformin max is 2000mg!
+            new_prescription="Metformin + Ibuprofen",
+            dosage="3000mg/day",
             task_id="hard"
         ),
         "expected_errors": ["dosage overdose", "contraindication with kidney disease"],
+        "expected_severity": "critical"
+    },
+
+    "easy_2": {
+        "observation": Observation(
+            patient_name="Priya Nair",
+            patient_age=28,
+            allergies=["Sulfa"],
+            conditions=["urinary tract infection"],
+            current_medications=[],
+            new_prescription="Sulfamethoxazole",
+            dosage="800mg/day",
+            task_id="easy_2"
+        ),
+        "expected_errors": ["sulfa allergy"],
+        "expected_severity": "critical"
+    },
+
+    "medium_2": {
+        "observation": Observation(
+            patient_name="Arjun Reddy",
+            patient_age=52,
+            allergies=[],
+            conditions=["high cholesterol"],
+            current_medications=["Simvastatin"],
+            new_prescription="Clarithromycin",
+            dosage="500mg/day",
+            task_id="medium_2"
+        ),
+        "expected_errors": ["drug interaction", "muscle damage risk"],
+        "expected_severity": "critical"
+    },
+
+    "hard_2": {
+        "observation": Observation(
+            patient_name="Lakshmi Devi",
+            patient_age=72,
+            allergies=["Aspirin"],
+            conditions=["heart failure", "kidney disease"],
+            current_medications=["Lisinopril"],
+            new_prescription="Ibuprofen + Aspirin",
+            dosage="400mg/day",
+            task_id="hard_2"
+        ),
+        "expected_errors": ["aspirin allergy", "contraindication with kidney disease", "drug interaction with lisinopril"],
         "expected_severity": "critical"
     }
 }
 
 
 def grade_response(task_id: str, detected_errors: list, severity: str) -> float:
-    """
-    This is the grader - it scores the agent's answer from 0.0 to 1.0
-    Think of it like a marking scheme
-    """
     task = TASKS[task_id]
     expected_errors = task["expected_errors"]
     expected_severity = task["expected_severity"]
 
     score = 0.0
 
-    # Check severity (worth 30% of score)
     if severity.lower() == expected_severity.lower():
         score += 0.3
 
-    # Check if agent found the errors (worth 70% of score)
     errors_found = 0
     for expected in expected_errors:
         for detected in detected_errors:
-            # check if the key word appears in what agent said
             if expected.lower() in detected.lower():
                 errors_found += 1
                 break
 
-    # partial credit - found some errors = some score
     if len(expected_errors) > 0:
         score += 0.7 * (errors_found / len(expected_errors))
 
