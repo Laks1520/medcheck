@@ -122,4 +122,11 @@ def grade_response(task_id: str, detected_errors: list, severity: str) -> float:
     if len(expected_errors) > 0:
         score += 0.7 * (errors_found / len(expected_errors))
 
-    return round(score, 2)
+    # Clamp strictly between 0 and 1 (exclusive)
+    score = round(score, 2)
+    if score <= 0.0:
+        score = 0.01
+    if score >= 1.0:
+        score = 0.99
+
+    return score
