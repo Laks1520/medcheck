@@ -84,6 +84,19 @@ Scores achieved by GPT-4o-mini baseline agent:
 | hard_2 | 0.65 | Partial errors detected |
 | **Average** | **0.84** | |
 
+
+## Why MedCheck?
+
+Medication errors affect millions of patients yearly. MedCheck gives AI agents 
+a safe sandbox to practice catching these errors before they reach real patients.
+
+## Environment Design
+
+- **Observation**: Full patient profile with allergies, conditions, medications
+- **Action**: Agent's detected errors, severity classification, recommendation  
+- **Reward**: Incremental feedback scoring both error detection and severity (strictly between 0 and 1)
+- **Tasks**: 6 scenarios across easy/medium/hard difficulty
+
 ## Real World Impact
 This environment can be used to train and evaluate AI agents for:
 - Hospital prescription validation systems

@@ -2,13 +2,16 @@ from models import Observation
 
 DRUG_INTERACTIONS = {
     "amoxicillin": ["penicillin"],
-    "aspirin": ["warfarin", "ibuprofen"],
-    "ibuprofen": ["kidney disease", "warfarin", "aspirin"],
-    "metformin": ["kidney disease"],
+    "aspirin": ["warfarin", "ibuprofen", "naproxen"],
+    "ibuprofen": ["kidney disease", "warfarin", "aspirin", "heart failure"],
+    "metformin": ["kidney disease", "liver disease"],
     "lisinopril": ["kidney disease", "potassium supplements"],
-    "simvastatin": ["clarithromycin", "erythromycin"],
+    "simvastatin": ["clarithromycin", "erythromycin", "gemfibrozil"],
+    "warfarin": ["aspirin", "ibuprofen", "naproxen", "clarithromycin"],
+    "sulfamethoxazole": ["sulfa"],
+    "codeine": ["tramadol", "respiratory disease"],
+    "ciprofloxacin": ["antacids", "dairy products"],
 }
-
 TASKS = {
     "easy": {
         "observation": Observation(
