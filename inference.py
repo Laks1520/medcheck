@@ -54,21 +54,28 @@ Analyze this prescription for errors. Respond ONLY with valid JSON:
         action = Action(**parsed)
 
     except Exception as e:
-        print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-        return 0.0
+        print(f"[STEP] task={task_id} step=1 reward=0.01 error={str(e)}", flush=True)
+        print(f"[END] task={task_id} score=0.01 steps=1", flush=True)
+        return 0.01
 
     try:
         _, reward, done, info = env.step(action)
     except Exception as e:
-        print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-        return 0.0
+        print(f"[STEP] task={task_id} step=1 reward=0.01 error={str(e)}", flush=True)
+        print(f"[END] task={task_id} score=0.01 steps=1", flush=True)
+        return 0.01
 
-    print(f"[STEP] task={task_id} step=1 reward={reward.score}", flush=True)
-    print(f"[END] task={task_id} score={reward.score} steps=1", flush=True)
+    # Clamp score strictly between 0 and 1
+    final_score = reward.score
+    if final_score <= 0.0:
+        final_score = 0.01
+    if final_score >= 1.0:
+        final_score = 0.99
 
-    return reward.score
+    print(f"[STEP] task={task_id} step=1 reward={final_score}", flush=True)
+    print(f"[END] task={task_id} score={final_score} steps=1", flush=True)
+
+    return final_score
 
 
 if __name__ == "__main__":
@@ -80,9 +87,9 @@ if __name__ == "__main__":
             score = run_task(task_id)
             scores[task_id] = score
         except Exception as e:
-            print(f"[STEP] task={task_id} step=1 reward=0.0 error={str(e)}", flush=True)
-            print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-            scores[task_id] = 0.0
+            print(f"[STEP] task={task_id} step=1 reward=0.01 error={str(e)}", flush=True)
+            print(f"[END] task={task_id} score=0.01 steps=1", flush=True)
+            scores[task_id] = 0.01
 
     print("=== FINAL SCORES ===", flush=True)
     for task_id, score in scores.items():
