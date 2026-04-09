@@ -110,7 +110,7 @@ def grade_response(task_id: str, detected_errors: list, severity: str) -> float:
     score = 0.0
 
     if severity.lower() == expected_severity.lower():
-        score += 0.3
+        score += 0.25
 
     errors_found = 0
     for expected in expected_errors:
@@ -120,10 +120,11 @@ def grade_response(task_id: str, detected_errors: list, severity: str) -> float:
                 break
 
     if len(expected_errors) > 0:
-        score += 0.7 * (errors_found / len(expected_errors))
+        score += 0.65 * (errors_found / len(expected_errors))
 
-    # Clamp strictly between 0 and 1 (exclusive)
     score = round(score, 2)
+
+    # Strictly enforce (0, 1) exclusive
     if score <= 0.0:
         score = 0.01
     if score >= 1.0:
